@@ -1,0 +1,28 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://wg:${POSTGRES_PASSWORD:-wg}@db:5432/wg_alert
+      INGEST_API_KEY: ${INGEST_API_KEY:-change-me}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: wg
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wg}
+      POSTGRES_DB: wg_alert
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wg -d wg_alert"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:

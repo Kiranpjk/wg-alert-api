@@ -1,0 +1,17 @@
+[
+  {"source": "demo-feed", "external_id": "jena-101", "url": "https://example.org/rooms/jena-101",
+   "title": "14 m2 room in 3er-WG near Paradies", "city": "Jena", "district": "Zentrum",
+   "rent": 390, "size_m2": 14, "available_from": "2026-12-01"},
+  {"source": "demo-feed", "external_id": "jena-102", "url": "https://example.org/rooms/jena-102",
+   "title": "Large room, Lobeda, furnished", "city": "Jena", "district": "Lobeda",
+   "rent": 340, "size_m2": 18, "available_from": "2027-01-01"},
+  {"source": "demo-feed", "external_id": "jena-103", "url": "https://example.org/rooms/jena-103",
+   "title": "Room in 2er-WG, Wenigenjena", "city": "jena", "district": "Wenigenjena",
+   "rent": 520, "size_m2": 20, "available_from": "2026-12-15"},
+  {"source": "demo-feed", "external_id": "jena-104", "url": "https://example.org/rooms/jena-104",
+   "title": "Small room, Zentrum, short term", "city": "Jena", "district": "Zentrum",
+   "rent": 310, "size_m2": 9, "available_from": "2026-12-01"},
+  {"source": "demo-feed", "external_id": "gott-201", "url": "https://example.org/rooms/gott-201",
+   "title": "Room in Göttingen Weststadt", "city": "Göttingen", "district": "Weststadt",
+   "rent": 380, "size_m2": 15, "available_from": "2026-12-01"}
+]
