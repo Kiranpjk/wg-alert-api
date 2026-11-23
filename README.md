@@ -3,6 +3,15 @@
 [![CI](https://github.com/Kiranpjk/wg-alert-api/actions/workflows/ci.yml/badge.svg)](https://github.com/Kiranpjk/wg-alert-api/actions/workflows/ci.yml)
 [![Docker](https://github.com/Kiranpjk/wg-alert-api/actions/workflows/docker.yml/badge.svg)](https://github.com/Kiranpjk/wg-alert-api/actions/workflows/docker.yml)
 
+[![Live demo](https://img.shields.io/badge/live%20demo-GitHub%20Pages-B4411F)](https://kiranpjk.github.io/wg-alert-api/)
+
+![WG Alert dashboard walkthrough](docs/media/demo.gif)
+
+[Watch the 54-second walkthrough (MP4)](docs/media/demo.mp4). It is a real browser recording of the
+[live demo](https://kiranpjk.github.io/wg-alert-api/), made with `docs/media/record-demo.mjs`. The demo keeps its
+data in your browser and shows a canned result for **Add from ad**; the real stack (FastAPI, PostgreSQL, Docker)
+is what the rest of this README describes.
+
 A small FastAPI + PostgreSQL service for students hunting for a WG room. You save searches
 (city, max rent, minimum size, districts, latest move-in date). Listings are pushed into the
 API from feeds you are allowed to use. Each new listing is deduplicated and matched against

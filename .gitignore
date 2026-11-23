@@ -12,3 +12,6 @@ data/
 *.tfstate*
 .terraform/
 *.tfvars
+
+# raw browser recordings; demo.mp4 and demo.gif are the kept outputs
+docs/media/raw/
