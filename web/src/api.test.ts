@@ -34,3 +34,23 @@ describe('API key', () => {
     await expect(api.listSearches()).rejects.toMatchObject({ status: 401, message: 'invalid or missing X-API-Key' })
   })
 })
+
+describe('ad parsing', () => {
+  it('POSTs the pasted text to the parse endpoint with the stored key', async () => {
+    window.localStorage.setItem(KEY_STORAGE, 'parse-test-key')
+    const fetchMock = stubFetch()
+    const text = 'Room in a shared flat in Jena.'
+    await api.parseAd(text)
+    const [url, options] = fetchMock.mock.calls[0]
+    expect(url).toBe('/api/listings/parse')
+    expect(options.method).toBe('POST')
+    expect(options.headers.get('X-API-Key')).toBe('parse-test-key')
+    expect(JSON.parse(options.body)).toEqual({ text })
+  })
+
+  it('passes through the parse endpoint error detail', async () => {
+    const detail = 'AI parsing is not configured (set ANTHROPIC_API_KEY).'
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ detail }), { status: 503 })))
+    await expect(api.parseAd('Room in a shared flat in Jena.')).rejects.toMatchObject({ status: 503, message: detail })
+  })
+})

@@ -6,12 +6,14 @@ import os
 import secrets
 from collections.abc import Iterator
 from contextlib import asynccontextmanager
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
+from threading import Lock
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
 from sqlalchemy import select, text, update
 from sqlalchemy.orm import Session, selectinload
 
+from .ai import AdParseError, parse_ad, redact_contacts
 from .db import (
     Base,
     Listing,
@@ -24,7 +26,28 @@ from .db import (
 )
 from .matching import matches
 from .metrics import install_metrics
-from .schemas import IngestResult, ListingIn, MatchOut, SearchIn, SearchOut
+from .schemas import IngestResult, ListingIn, MatchOut, ParseAdIn, ParseAdOut, SearchIn, SearchOut
+
+_parse_lock = Lock()
+_parse_day = None
+_parse_count = 0
+
+
+def _reserve_parse() -> bool:
+    global _parse_day, _parse_count
+    try:
+        limit = int(os.getenv("PARSE_DAILY_LIMIT", "100"))
+    except ValueError:
+        limit = 100
+    with _parse_lock:
+        today = datetime.now(UTC).date()
+        if today != _parse_day:
+            _parse_day, _parse_count = today, 0
+        if _parse_count >= limit:
+            return False
+        _parse_count += 1
+        return True
+
 
 BACKFILL_DAYS = 7
 MAX_BATCH = 500
@@ -66,7 +89,7 @@ def create_app(database_url: str | None = None) -> FastAPI:
         dependencies=[Depends(require_key)],
     )
     app.state.engine = engine
-    ingested, matches_created = install_metrics(app, SessionLocal)
+    ingested, matches_created, ad_parse = install_metrics(app, SessionLocal)
 
     def get_db() -> Iterator[Session]:
         with SessionLocal() as session:
@@ -154,6 +177,36 @@ def create_app(database_url: str | None = None) -> FastAPI:
         ingested.labels("duplicate").inc(duplicates)
         matches_created.inc(matched)
         return IngestResult(created=created, duplicates=duplicates, matches=matched)
+
+    @app.post("/listings/parse", response_model=ParseAdOut)
+    def parse_listing(body: ParseAdIn) -> ParseAdOut:
+        if not os.getenv("ANTHROPIC_API_KEY"):
+            ad_parse.labels("unconfigured").inc()
+            raise HTTPException(503, "AI parsing is not configured (set ANTHROPIC_API_KEY).")
+        if not _reserve_parse():
+            ad_parse.labels("limited").inc()
+            raise HTTPException(
+                429, "Daily AI parsing limit reached. Try again after midnight UTC."
+            )
+        try:
+            draft = parse_ad(body.text)
+        except AdParseError:
+            ad_parse.labels("error").inc()
+            raise HTTPException(502, "AI could not extract listing details.") from None
+        _, removed = redact_contacts(body.text)
+        warnings = []
+        if draft.rent_kind == "cold":
+            warnings.append("Only cold rent (Kaltmiete) was found; the API compares warm rent.")
+        if draft.rent_kind == "unknown" and draft.rent is not None:
+            warnings.append("Could not tell whether the rent is warm or cold.")
+        if draft.rent is None:
+            warnings.append("Missing rent.")
+        if not draft.city:
+            warnings.append("Missing city.")
+        if not draft.url:
+            warnings.append("No link found; add the ad link before saving.")
+        ad_parse.labels("ok").inc()
+        return ParseAdOut(draft=draft, removed_contact_details=removed, warnings=warnings)
 
     @app.get("/searches/{search_id}/matches", response_model=list[MatchOut])
     def list_matches(

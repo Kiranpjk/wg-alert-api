@@ -33,6 +33,19 @@ spec:
           envFrom:
             - secretRef:
                 name: wg-alert-api
+          env:
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: wg-alert-api
+                  key: ANTHROPIC_API_KEY
+                  optional: true
+            - name: ANTHROPIC_MODEL
+              valueFrom:
+                secretKeyRef:
+                  name: wg-alert-api
+                  key: ANTHROPIC_MODEL
+                  optional: true
           securityContext:
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false

@@ -12,6 +12,7 @@
 .brand { font: 620 1.5rem/1 var(--serif); letter-spacing: -.04em; white-space: nowrap; }
 .brand-icon { display: grid; place-items: center; width: 32px; height: 32px; color: var(--accent); }
 .topbar button { border-color: transparent; }
+.topbar .add-ad-button { border-color: var(--control-line); white-space: nowrap; }
 .health { display: flex; align-items: center; gap: 8px; font-size: .8125rem; color: var(--muted); }
 .online-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
 .online-dot.online { background: var(--online); }
@@ -158,6 +159,12 @@
 .field { display: grid; gap: 4px; font-size: .875rem; }
 .field label { font-weight: 600; }
 .field-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.ad-demo { margin-bottom: 16px; padding-inline: 12px; }
+.ad-feedback:not(:empty) { margin-bottom: 16px; }
+.ad-warnings { margin: 0; padding-left: 24px; color: var(--accent); }
+.ad-actions { display: flex; gap: 8px; }
+.field textarea { width: 100%; resize: vertical; }
+.field [data-empty] { border-style: dashed; border-color: var(--accent); }
 .field-error { color: var(--accent); font-size: .875rem; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chips li {
@@ -203,8 +210,14 @@
   .topbar .settings-button { width: 44px; padding: 0; }
   .settings-button span { display: none; }
   .brand { font-size: 1.25rem; }
+  .health { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .add-ad-button { padding-inline: 8px; }
   .empty, .match-card { padding: 16px; }
   .delete-button { margin-left: 0; }
+}
+@media (width < 360px) {
+  .topbar { flex-wrap: wrap; }
+  .top-actions { margin-left: auto; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }

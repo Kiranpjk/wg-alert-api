@@ -81,6 +81,37 @@ an API. The demo seeds a few fictional rooms, saves data in browser storage,
 and sends the rest of the sample feed in three batches when you select
 **Ingest sample feed**. The demo needs no ingest key.
 
+## AI: add a listing from a pasted ad
+
+Room ads often arrive by email, chat or portal notifications. Use **Add from ad**
+to paste one into the dashboard and extract a draft. The API strips email
+addresses and phone numbers before sending up to 6,000 characters to Anthropic,
+then validates the entire response against the draft schema. Review and edit
+the fields before selecting **Add to feed**. Only that final action saves and
+matches a listing.
+
+The ad text, minus the contact details detected by the redaction patterns,
+is sent to Anthropic. Remove any other private information before pasting.
+
+Set these environment variables on the API service:
+
+| Variable | Purpose |
+| --- | --- |
+| `ANTHROPIC_API_KEY` | Enables AI extraction. Keep this key on the server. |
+| `ANTHROPIC_MODEL` | Optional model override. Defaults to `claude-haiku-5-5`. |
+| `PARSE_DAILY_LIMIT` | Defaults to 100 parse requests per API process per UTC day. Configured attempts count toward the limit, including failed upstream calls. The counter resets on process restart and at midnight UTC. |
+
+On Kubernetes, put the optional configuration in the `wg-alert-api` Secret.
+The bundled NetworkPolicy restricts API egress. To enable extraction, allow
+the API pods to reach `api.anthropic.com:443` through your cluster's egress
+policy or HTTPS proxy.
+
+The model can misread an ad and is instructed to extract only the first
+listing in the pasted text. Matching uses warm rent. When the model finds
+only cold rent, the dashboard shows that amount and asks you to enter the
+warm rent. The Pages demo uses a fixed example and makes no AI request.
+The Anthropic integration tests use mocked responses.
+
 ## API
 
 | Method | Path | Description |
@@ -91,6 +122,7 @@ and sends the rest of the sample feed in three batches when you select
 | POST | `/searches` | Create a saved search (backfills matches) |
 | GET | `/searches`, `/searches/{id}` | List / read |
 | DELETE | `/searches/{id}` | Delete search and its matches |
+| POST | `/listings/parse` | Extract a draft from pasted ad text |
 | POST | `/listings` | Ingest up to 500 listings → `{created, duplicates, matches}` |
 | GET | `/searches/{id}/matches?unseen_only=true` | Matches, newest first |
 | POST | `/searches/{id}/matches/seen` | Mark all matches as seen |
@@ -145,13 +177,13 @@ CI publishes `ghcr.io/kiranpjk/wg-alert-api` and `ghcr.io/kiranpjk/wg-alert-web`
 ## Tests
 
 ```bash
-pytest -q                                   # 26 tests, including 16 existing API tests
+pytest -q
 TEST_DATABASE_URL=postgresql+psycopg://user:pass@localhost:5432/wg_test pytest -q
 ```
 
 Covers the matching rules (parametrised), dedupe, backfill, seen/unseen, validation errors,
-404s, cascade delete, API-key auth, metrics and monitoring configuration. The
-26-test local run used SQLite. CI also runs the existing API tests against PostgreSQL.
+404s, cascade delete, API-key auth, metrics, monitoring configuration, and ad parsing
+with mocked Anthropic responses. CI also runs the suite with PostgreSQL.
 
 ## CI/CD
 

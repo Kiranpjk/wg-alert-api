@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 
 class SearchIn(BaseModel):
@@ -52,3 +53,37 @@ class MatchOut(BaseModel):
     seen: bool
     created_at: datetime
     listing: ListingOut
+
+
+class ParseAdIn(BaseModel):
+    text: str = Field(min_length=20, max_length=6000)
+
+
+class ParsedAd(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str | None = Field(max_length=200)
+    city: str | None
+    district: str | None
+    rent: float | None = Field(gt=0, le=10000, strict=True)
+    rent_kind: Literal["warm", "cold", "unknown"]
+    size_m2: float | None = Field(gt=0, le=1000, strict=True)
+    available_from: date | None
+    url: str | None = Field(pattern=r"^https?://", max_length=500)
+
+    @field_validator("available_from", mode="before")
+    @classmethod
+    def iso_date(cls, value):
+        if value is None:
+            return None
+        if isinstance(value, str):
+            parsed = date.fromisoformat(value)
+            if parsed.isoformat() == value:
+                return parsed
+        raise ValueError("Expected a date in YYYY-MM-DD format")
+
+
+class ParseAdOut(BaseModel):
+    draft: ParsedAd
+    removed_contact_details: int
+    warnings: list[str]

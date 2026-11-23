@@ -26,7 +26,7 @@ export function Dialog({ title, children, onClose, drawer = false }: {
     onKeyDown={(event) => {
       if (event.key !== 'Tab') return
       const items = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(
-        'button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href]',
+        'button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), a[href]',
       )).filter((item) => item.getClientRects().length > 0)
       const first = items[0]
       const last = items.at(-1)

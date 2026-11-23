@@ -52,6 +52,7 @@ const httpApi: Api = {
   getSearch: (id) => request(`/searches/${id}`),
   createSearch: (search) => request('/searches', 'POST', search),
   deleteSearch: (id) => request(`/searches/${id}`, 'DELETE'),
+  parseAd: (text) => request('/listings/parse', 'POST', { text }),
   ingest: (listings, key) => request('/listings', 'POST', listings, key),
   listMatches: (id, unseenOnly = false) => request(`/searches/${id}/matches?unseen_only=${unseenOnly}`),
   markSeen: (id) => request(`/searches/${id}/matches/seen`, 'POST'),

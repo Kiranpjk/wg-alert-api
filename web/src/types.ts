@@ -43,7 +43,25 @@ export interface IngestResult {
   matches: number
 }
 
+export interface ParsedAd {
+  title: string | null
+  city: string | null
+  district: string | null
+  rent: number | null
+  rent_kind: 'warm' | 'cold' | 'unknown'
+  size_m2: number | null
+  available_from: string | null
+  url: string | null
+}
+
+export interface ParseAdResult {
+  draft: ParsedAd
+  removed_contact_details: number
+  warnings: string[]
+}
+
 export interface Api {
+  parseAd(text: string): Promise<ParseAdResult>
   health(): Promise<{ status: string }>
   listSearches(): Promise<Search[]>
   getSearch(id: number): Promise<Search>

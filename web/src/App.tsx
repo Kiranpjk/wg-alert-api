@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, isDemo } from './api'
 import { demoListings } from './demo/demoApi'
+import { AdImport } from './components/AdImport'
 import { Dialog } from './components/Dialog'
 import { Icon } from './components/Icon'
 import { euro, MatchCard } from './components/MatchCard'
@@ -10,7 +11,7 @@ import { visibleMatches, type Sort } from './matchView'
 import { useTheme } from './theme'
 import type { Api, Match, Search, SearchIn } from './types'
 
-type Panel = 'new' | 'settings' | 'drawer' | null
+type Panel = 'new' | 'settings' | 'drawer' | 'ad' | null
 type Notice = { message: string; retry?: () => void }
 type Dashboard = { searches: Search[]; matches: Record<number, Match[]> }
 const emptyDashboard: Dashboard = { searches: [], matches: {} }
@@ -254,6 +255,7 @@ export default function App({ client = api, demo = isDemo }: { client?: Api; dem
           {health === null ? 'Checking API' : health ? 'API online' : 'API offline'}
         </span>
         <button className="icon-button" onClick={toggle} aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}><Icon name="theme" /></button>
+        <button className="add-ad-button" onClick={() => setPanel('ad')} aria-haspopup="dialog">Add from ad</button>
         <button className="settings-button" onClick={() => setPanel('settings')} aria-label="Settings" aria-haspopup="dialog"><Icon name="settings" /><span>Settings</span></button>
       </div>
     </header>
@@ -298,6 +300,7 @@ export default function App({ client = api, demo = isDemo }: { client?: Api; dem
                 ? 'New rooms will appear here as they arrive.'
                 : 'Rooms that fit this search will appear as listings arrive.'}</p>
               {matches.length > 0 && unseenOnly && <button onClick={() => setUnseenOnly(false)}>Show seen matches</button>}
+              <button onClick={() => setPanel('ad')} aria-haspopup="dialog">Add from ad</button>
               {demo && matches.length === 0 && <button onClick={() => setPanel('settings')}>Open sample feed settings</button>}
             </section>}
           </section>
@@ -326,6 +329,10 @@ export default function App({ client = api, demo = isDemo }: { client?: Api; dem
         <button className="icon-button" aria-label="Dismiss notification" onClick={() => setNotice(null)}><Icon name="close" /></button>
       </div>}
     </div>
+    {panel === 'ad' && <AdImport client={client} demo={demo} onClose={closePanel} onSaved={(result) => {
+      setNotice({ message: result.duplicates ? 'Already in your feed' : `${result.created} added, ${result.matches} matches` })
+      void refresh(false)
+    }} />}
     {panel === 'drawer' && <Dialog key="drawer" title="Saved searches" drawer onClose={closePanel}>{renderIndex(true)}</Dialog>}
     {panel === 'new' && <Dialog key="new" title="New search" onClose={closePanel}><SearchForm onSave={createSearch} /></Dialog>}
     {panel === 'settings' && <Dialog key="settings" title="Settings" onClose={closePanel}><Settings demo={demo} ingesting={ingesting} onIngest={(key) => void ingest(key)} /></Dialog>}

@@ -6,6 +6,9 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://wg:${POSTGRES_PASSWORD:-wg}@db:5432/wg_alert
       INGEST_API_KEY: ${INGEST_API_KEY:?set INGEST_API_KEY in .env (openssl rand -hex 32)}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-}
+      PARSE_DAILY_LIMIT: ${PARSE_DAILY_LIMIT:-100}
     depends_on:
       db:
         condition: service_healthy

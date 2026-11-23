@@ -86,6 +86,18 @@ export function createDemoApi({ now = Date.now, storageKey = 'wg-alert:demo:v1',
       state.matches = state.matches.filter((match) => match.searchId !== id)
       persist()
     },
+    async parseAd() {
+      await new Promise((resolve) => setTimeout(resolve, 600))
+      return {
+        draft: {
+          title: 'Furnished room in a shared flat', city: 'Jena', district: 'Lobeda',
+          rent: 340, rent_kind: 'warm', size_m2: 18, available_from: '2027-01-01',
+          url: 'https://example.org/rooms/pasted-demo',
+        },
+        removed_contact_details: 0,
+        warnings: [],
+      }
+    },
     async ingest(listings) {
       if (listings.length > 500) throw new Error('A batch can contain up to 500 listings.')
       const result = { created: 0, duplicates: 0, matches: 0 }
