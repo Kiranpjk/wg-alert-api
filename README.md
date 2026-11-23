@@ -51,6 +51,35 @@ Design choices:
 - **Ingest auth**: if `INGEST_API_KEY` is set, `POST /listings` needs a matching `X-API-Key` header (constant-time compare). Read endpoints are open because this is meant as a single-user, self-hosted tool.
 - Tables are created on startup. There is no migration tool yet.
 
+## Dashboard
+
+The web dashboard lets you save WG-room searches and review new matches as
+listings arrive. Create searches with city, warm rent, optional room size,
+districts and a move-in deadline. Browse matches by newest, lowest rent or
+best price per square metre. You can show seen matches, mark all matches as
+seen, and delete searches. The dashboard also includes API health, light
+and dark themes, and sample-feed ingestion under Settings.
+
+Run the full stack:
+
+```sh
+docker compose up --build
+```
+
+Open http://localhost:8080. To ingest the sample feed against Compose, enter
+the configured `INGEST_API_KEY` in Settings. Compose defaults to `change-me`.
+
+For frontend development, run the API on port 8000 and start Vite:
+
+```sh
+cd web && npm ci && npm run dev
+```
+
+Run `VITE_DEMO=true npm run dev` from `web/` to try the dashboard without
+an API. The demo seeds a few fictional rooms, saves data in browser storage,
+and sends the rest of the sample feed in three batches when you select
+**Ingest sample feed**. The demo needs no ingest key.
+
 ## API
 
 | Method | Path | Description |

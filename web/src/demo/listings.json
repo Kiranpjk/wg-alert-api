@@ -1,0 +1,163 @@
+[
+  {
+    "source": "demo-feed",
+    "external_id": "jena-101",
+    "url": "https://example.org/rooms/jena-101",
+    "title": "14 m2 room in 3er-WG near Paradies",
+    "city": "Jena",
+    "district": "Zentrum",
+    "rent": 390,
+    "size_m2": 14,
+    "available_from": "2026-12-01"
+  },
+  {
+    "source": "demo-feed",
+    "external_id": "jena-102",
+    "url": "https://example.org/rooms/jena-102",
+    "title": "Large room, Lobeda, furnished",
+    "city": "Jena",
+    "district": "Lobeda",
+    "rent": 340,
+    "size_m2": 18,
+    "available_from": "2027-01-01"
+  },
+  {
+    "source": "demo-feed",
+    "external_id": "jena-103",
+    "url": "https://example.org/rooms/jena-103",
+    "title": "Room in 2er-WG, Wenigenjena",
+    "city": "jena",
+    "district": "Wenigenjena",
+    "rent": 520,
+    "size_m2": 20,
+    "available_from": "2026-12-15"
+  },
+  {
+    "source": "demo-feed",
+    "external_id": "jena-104",
+    "url": "https://example.org/rooms/jena-104",
+    "title": "Small room, Zentrum, short term",
+    "city": "Jena",
+    "district": "Zentrum",
+    "rent": 310,
+    "size_m2": 9,
+    "available_from": "2026-12-01"
+  },
+  {
+    "source": "demo-feed",
+    "external_id": "gott-201",
+    "url": "https://example.org/rooms/gott-201",
+    "title": "Room in Göttingen Weststadt",
+    "city": "Göttingen",
+    "district": "Weststadt",
+    "rent": 380,
+    "size_m2": 15,
+    "available_from": "2026-12-01"
+  },
+  {
+    "source": "demo-feed",
+    "external_id": "jena-105",
+    "url": "https://example.org/rooms/jena-105",
+    "title": "Quiet courtyard room near Ernst-Abbe-Platz",
+    "city": "Jena",
+    "district": "Jena-West",
+    "rent": 445,
+    "size_m2": 16,
+    "available_from": "2026-12-10"
+  },
+  {
+    "source": "demo-feed",
+    "external_id": "jena-106",
+    "url": "https://example.org/rooms/jena-106",
+    "title": "Furnished room near the tram terminus",
+    "city": "Jena",
+    "district": "Winzerla",
+    "rent": 365,
+    "available_from": "2027-01-01"
+  },
+  {
+    "source": "demo-feed",
+    "external_id": "da-301",
+    "url": "https://example.org/rooms/da-301",
+    "title": "Sunny room in a shared Altbau flat",
+    "city": "Darmstadt",
+    "district": "Martinsviertel",
+    "rent": 585,
+    "size_m2": 19,
+    "available_from": "2026-12-15"
+  },
+  {
+    "source": "demo-feed",
+    "external_id": "da-302",
+    "url": "https://example.org/rooms/da-302",
+    "title": "Small room near the Orangerie",
+    "city": "Darmstadt",
+    "district": "Bessungen",
+    "rent": 430,
+    "size_m2": 10,
+    "available_from": "2026-12-01"
+  },
+  {
+    "source": "demo-feed",
+    "external_id": "da-303",
+    "url": "https://example.org/rooms/da-303",
+    "title": "Room with a desk and shared balcony",
+    "city": "Darmstadt",
+    "district": "Kranichstein",
+    "rent": 495,
+    "size_m2": 15
+  },
+  {
+    "source": "demo-feed",
+    "external_id": "cz-401",
+    "url": "https://example.org/rooms/cz-401",
+    "title": "Attic room near the university library",
+    "city": "Clausthal-Zellerfeld",
+    "district": "Clausthal",
+    "rent": 280,
+    "size_m2": 9,
+    "available_from": "2026-12-01"
+  },
+  {
+    "source": "demo-feed",
+    "external_id": "cz-402",
+    "url": "https://example.org/rooms/cz-402",
+    "title": "Large room in a shared timber house",
+    "city": "Clausthal-Zellerfeld",
+    "district": "Zellerfeld",
+    "rent": 370,
+    "size_m2": 23,
+    "available_from": "2027-01-01"
+  },
+  {
+    "source": "demo-feed",
+    "external_id": "ber-501",
+    "url": "https://example.org/rooms/ber-501",
+    "title": "Room in a three-person flat near Leopoldplatz",
+    "city": "Berlin",
+    "district": "Wedding",
+    "rent": 625,
+    "size_m2": 17,
+    "available_from": "2026-12-15"
+  },
+  {
+    "source": "demo-feed",
+    "external_id": "ber-502",
+    "url": "https://example.org/rooms/ber-502",
+    "title": "Spacious room near Körnerpark",
+    "city": "Berlin",
+    "district": "Neukölln",
+    "rent": 780,
+    "size_m2": 28,
+    "available_from": "2027-01-01"
+  },
+  {
+    "source": "demo-feed",
+    "external_id": "ber-503",
+    "url": "https://example.org/rooms/ber-503",
+    "title": "Furnished room near the S-Bahn",
+    "city": "Berlin",
+    "district": "Lichtenberg",
+    "rent": 535
+  }
+]
