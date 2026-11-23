@@ -1,0 +1,33 @@
+#!/bin/bash
+set -euo pipefail
+umask 077
+
+dnf install -y docker openssl
+install -d -m 0755 /usr/local/lib/docker/cli-plugins
+curl --fail --silent --show-error --location --retry 5 \
+  https://github.com/docker/compose/releases/download/v2.32.4/docker-compose-linux-x86_64 \
+  -o /usr/local/lib/docker/cli-plugins/docker-compose
+chmod 0755 /usr/local/lib/docker/cli-plugins/docker-compose
+systemctl enable --now docker
+
+install -d -m 0700 /opt/wg-alert
+cd /opt/wg-alert
+cat > compose.yaml <<'COMPOSE'
+${compose}
+COMPOSE
+
+if [[ ! -s .env ]]; then
+  db_password=$(openssl rand -hex 32)
+  ingest_key=$(openssl rand -hex 32)
+  printf 'POSTGRES_PASSWORD=%s\nINGEST_API_KEY=%s\n' "$db_password" "$ingest_key" > .env
+fi
+
+# Retry pulls while the Elastic IP association settles or the registry is unavailable.
+for attempt in 1 2 3 4 5; do
+  if docker compose pull; then
+    docker compose up -d --wait --wait-timeout 180
+    exit 0
+  fi
+  sleep 10
+done
+exit 1

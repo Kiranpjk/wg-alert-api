@@ -1,0 +1,26 @@
+name: Kubernetes
+
+on:
+  pull_request:
+    paths: ["k8s/**", ".github/workflows/k8s.yml"]
+  push:
+    paths: ["k8s/**", ".github/workflows/k8s.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@776406bce94f63e41d621b960d78ee25c8b76ede # v4
+        with:
+          version: v1.32.3
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: false
+      - run: go install github.com/yannh/kubeconform/cmd/kubeconform@v0.6.7
+      - shell: bash
+        run: kubectl kustomize k8s | "$(go env GOPATH)/bin/kubeconform" -strict -summary -ignore-missing-schemas

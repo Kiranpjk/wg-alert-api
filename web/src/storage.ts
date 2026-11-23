@@ -1,3 +1,5 @@
+export const KEY_STORAGE = 'wg-alert:ingest-key'
+
 export function readStored(key: string): string | null {
   try {
     return window.localStorage.getItem(key)

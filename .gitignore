@@ -8,3 +8,7 @@ __pycache__/
 data/
 .env
 *.db
+/k8s/secret.yaml
+*.tfstate*
+.terraform/
+*.tfvars

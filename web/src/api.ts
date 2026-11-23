@@ -1,4 +1,5 @@
 import { createDemoApi } from './demo/demoApi'
+import { KEY_STORAGE, readStored } from './storage'
 import type { Api } from './types'
 
 export class ApiError extends Error {
@@ -10,14 +11,15 @@ export class ApiError extends Error {
 const base = (import.meta.env.VITE_API_BASE ?? '/api').replace(/\/$/, '')
 export const isDemo = import.meta.env.VITE_DEMO === 'true'
 
-async function request<T>(path: string, method = 'GET', body?: unknown, key?: string): Promise<T> {
+async function request<T>(path: string, method = 'GET', body?: unknown, keyArg?: string): Promise<T> {
+  const key = keyArg ?? readStored(KEY_STORAGE) ?? ''
   const headers = new Headers({ Accept: 'application/json' })
   if (body !== undefined) headers.set('Content-Type', 'application/json')
   if (key) {
     try {
       headers.set('X-API-Key', key)
     } catch {
-      throw new ApiError(400, {}, 'Enter a valid ingest API key.')
+      throw new ApiError(400, {}, 'Enter a valid API key.')
     }
   }
   const response = await fetch(base + path, {

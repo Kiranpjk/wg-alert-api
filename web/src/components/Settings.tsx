@@ -1,7 +1,5 @@
 import { useState } from 'react'
-import { readStored, writeStored } from '../storage'
-
-const storageKey = 'wg-alert:ingest-key'
+import { KEY_STORAGE as storageKey, readStored, writeStored } from '../storage'
 
 export function Settings({ demo, ingesting, onIngest }: {
   demo: boolean
@@ -13,10 +11,15 @@ export function Settings({ demo, ingesting, onIngest }: {
   return <div className="settings">
     {!demo && <form onSubmit={(event) => {
       event.preventDefault()
-      setNotice(writeStored(storageKey, key) ? 'API key saved.' : 'Browser storage is unavailable. You can still use the key in this dialog.')
+      if (writeStored(storageKey, key)) {
+        setNotice('API key saved. Reloading…')
+        window.location.reload() // reload so every request picks up the new key
+      } else {
+        setNotice('Browser storage is unavailable, so the key cannot be saved.')
+      }
     }}>
       <div className="field">
-        <label htmlFor="ingest-key">Ingest API key</label>
+        <label htmlFor="ingest-key">API key</label>
         <input id="ingest-key" type="password" autoComplete="off" value={key} onChange={(event) => {
           setKey(event.target.value)
           setNotice('')

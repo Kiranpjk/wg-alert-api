@@ -48,7 +48,9 @@ Design choices:
 - **Idempotent ingest**: the same listing posted twice is counted as a duplicate, never matched twice.
 - **Backfill**: a newly created search gets matches from the last 7 days immediately.
 - **Missing size is kept**: a listing without m² still matches, because a false positive costs less than a missed room.
-- **Ingest auth**: if `INGEST_API_KEY` is set, `POST /listings` needs a matching `X-API-Key` header (constant-time compare). Read endpoints are open because this is meant as a single-user, self-hosted tool.
+- **Auth**: every route except `/health`, `/livez` and `/metrics` needs the `X-API-Key` header (constant-time compare). The app refuses to start without `INGEST_API_KEY`; for local development only, `ALLOW_NO_API_KEY=1` turns the check off. This is a single shared key for a self-hosted tool, not per-user accounts. Over plain HTTP the key travels unencrypted, so put TLS or a VPN in front of any internet-facing deployment.
+- **Probes**: `/livez` never touches the database (used for Kubernetes liveness); `/health` checks the database (readiness).
+- **Atomic ingest**: duplicates are skipped with a single `INSERT ... ON CONFLICT DO NOTHING`, so simultaneous identical requests cannot crash each other.
 - Tables are created on startup. There is no migration tool yet.
 
 ## Dashboard
@@ -66,8 +68,7 @@ Run the full stack:
 docker compose up --build
 ```
 
-Open http://localhost:8080. To ingest the sample feed against Compose, enter
-the configured `INGEST_API_KEY` in Settings. Compose defaults to `change-me`.
+Open http://localhost:8080. Enter the `INGEST_API_KEY` from your `.env` under Settings once; the dashboard then sends it with every request.
 
 For frontend development, run the API on port 8000 and start Vite:
 
@@ -84,7 +85,9 @@ and sends the rest of the sample feed in three batches when you select
 
 | Method | Path | Description |
 | --- | --- | --- |
-| GET | `/health` | Liveness + DB check |
+| GET | `/livez` | Liveness (no database call), no key needed |
+| GET | `/health` | Readiness: database check, no key needed |
+| GET | `/metrics` | Prometheus text metrics |
 | POST | `/searches` | Create a saved search (backfills matches) |
 | GET | `/searches`, `/searches/{id}` | List / read |
 | DELETE | `/searches/{id}` | Delete search and its matches |
@@ -102,7 +105,7 @@ A real local run with the sample feed in `fixtures/sample_listings.json` (fictio
 $ curl -s localhost:8000/health
 {"status":"ok"}
 
-$ curl -s -X POST localhost:8000/searches -H "Content-Type: application/json" \
+$ curl -s -X POST localhost:8000/searches -H "X-API-Key: $INGEST_API_KEY" -H "Content-Type: application/json" \
     -d '{"label":"Jena under 400","city":"Jena","max_rent":400,"min_size_m2":12}'
 {"label":"Jena under 400","city":"Jena","max_rent":400.0,"min_size_m2":12.0,"districts":[],"available_by":null,"id":1,"active":true,"created_at":"2026-11-22T23:48:04.744621Z"}
 
@@ -113,7 +116,7 @@ $ curl -s -X POST localhost:8000/listings -H "X-API-Key: $INGEST_API_KEY" \
 $ # same request again
 {"created":0,"duplicates":5,"matches":0}
 
-$ curl -s "localhost:8000/searches/1/matches?unseen_only=true" \
+$ curl -s -H "X-API-Key: $INGEST_API_KEY" "localhost:8000/searches/1/matches?unseen_only=true" \
     | jq -r '.[].listing | [.rent, .size_m2, .district, .title] | @tsv'
 340.0   18.0    Lobeda  Large room, Lobeda, furnished
 390.0   14.0    Zentrum 14 m2 room in 3er-WG near Paradies
@@ -127,35 +130,116 @@ $ curl -s -X POST localhost:8000/listings -d '[]' -o /dev/null -w "%{http_code}\
 ```bash
 python -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"
-INGEST_API_KEY=change-me uvicorn app.main:app --reload      # SQLite file wg_alert.db
+INGEST_API_KEY=dev-key uvicorn app.main:app --reload      # SQLite file wg_alert.db
 ```
 
 ## Run with Docker
 
 ```bash
-cp .env.example .env        # set your own values
+cp .env.example .env        # set INGEST_API_KEY (openssl rand -hex 32); compose refuses to start without it
 docker compose up --build   # API on :8000, PostgreSQL 16 with a named volume
 ```
 
-Image published by CI: `ghcr.io/kiranpjk/wg-alert-api`.
+CI publishes `ghcr.io/kiranpjk/wg-alert-api` and `ghcr.io/kiranpjk/wg-alert-web`.
 
 ## Tests
 
 ```bash
-pytest -q                                   # 16 tests on in-memory SQLite
+pytest -q                                   # 26 tests, including 16 existing API tests
 TEST_DATABASE_URL=postgresql+psycopg://user:pass@localhost:5432/wg_test pytest -q
 ```
 
 Covers the matching rules (parametrised), dedupe, backfill, seen/unseen, validation errors,
-404s, cascade delete, and API-key auth. Both the SQLite and PostgreSQL runs were done locally.
+404s, cascade delete, API-key auth, metrics and monitoring configuration. The
+26-test local run used SQLite. CI also runs the existing API tests against PostgreSQL.
 
 ## CI/CD
 
 - `.github/workflows/ci.yml`: ruff lint + format check, then pytest twice: on SQLite and on a
   `postgres:16-alpine` service container.
-- `.github/workflows/docker.yml`: builds the image on PRs; pushes to GHCR on `main` and `v*`
+- `.github/workflows/docker.yml`: builds both images on PRs and pushes to GHCR on `main` and `v*`
   tags using `GITHUB_TOKEN`.
 - `.github/dependabot.yml`: weekly pip, GitHub Actions and Docker updates.
+
+## Observability
+
+`GET /metrics` exports request counts by method, route template and status,
+and a request-duration histogram by method and route template. Unknown paths
+share one label. Scrapes are excluded. Listing and match counters record
+committed writes per API process. Each replica reports the same database-wide
+active search count, so the dashboard uses `max` for that gauge.
+
+To start the monitoring stack alongside the app, run from the repo root in Bash:
+
+```bash
+read -rsp 'Grafana admin password: ' GRAFANA_PASSWORD
+export GRAFANA_PASSWORD
+docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up --build -d
+```
+
+Prometheus binds to `127.0.0.1:9090`, scrapes every 15 seconds and evaluates
+three alerts covering scrape failures, 5xx ratio and p95 latency. Grafana binds
+to `127.0.0.1:3000`. Sign in as `admin` to open the provisioned WG Alert API dashboard.
+
+```sh
+promtool check config deploy/monitoring/prometheus.yml
+promtool check rules deploy/monitoring/alerts.yml
+pytest tests/test_metrics.py tests/test_monitoring_files.py
+```
+
+## Kubernetes
+
+The Kustomize base deploys into `wg-alert`. Set the Ingress hostname and the two
+GHCR image tags in `k8s/kustomization.yaml`. The defaults use `main`. For a
+reproducible deployment, set both to published SHA or release tags.
+
+```sh
+kustomize build k8s | kubeconform -strict -summary
+kubeconform -strict -summary k8s/secret.example.yaml
+```
+
+To deploy, use a cluster with a NetworkPolicy-capable CNI, default storage
+class, Metrics API for the CPU HPA, and an NGINX ingress controller matching
+the namespace and pod selectors in `k8s/base/network-policy.yaml`. The policy
+also allows CoreDNS and Prometheus using the selectors in that file. Configure
+your Prometheus instance to discover annotated API pods if you want cluster
+scraping. Both GHCR images must be pullable by the cluster.
+
+```sh
+kubectl apply -f k8s/base/namespace.yaml
+cp -n k8s/secret.example.yaml k8s/secret.yaml
+# Edit k8s/secret.yaml using a new hex DB password in both fields and a new ingest key.
+kubectl apply -f k8s/secret.yaml
+kubectl apply -k k8s
+```
+
+## Terraform
+
+[The AWS deployment guide](infra/terraform/README.md) covers the EC2 stack,
+required inputs and generated credentials. This is a single-node deployment
+with HTTP and no TLS termination.
+
+```sh
+cd infra/terraform
+terraform fmt -check -recursive
+terraform init -backend=false
+terraform validate
+```
+
+## What is verified
+
+| Artifact | Local check performed |
+| --- | --- |
+| API and Prometheus exposition | `pytest` passed all 26 tests, including the 16 existing tests and 8 new metrics tests. Ruff lint and format checks passed. |
+| Prometheus scrape config and alerts | `promtool` v3.5.0 passed `check config` and `check rules` for all three alerts. |
+| Grafana provisioning and monitoring Compose | Two pytest configuration tests cover monitoring file structure, including the dashboard datasource and Compose mount and password wiring. |
+| Kubernetes manifests and Secret template | Kustomize v5.6.0 rendered 15 resources. Kubeconform v0.6.7 strict validation passed all 15 plus the two example Secret documents, with zero skips. |
+| AWS Terraform and bootstrap | Terraform 1.10.5 passed format check, backendless init and validate. The rendered bootstrap script passed `bash -n`. |
+| Docker, Kubernetes and Terraform workflows | `actionlint` v1.7.7 passed for the three workflow files. |
+
+Docker and the monitoring stack were not run locally. Kubernetes checks were
+static manifest validation. Terraform was not applied to AWS, and the GitHub
+Actions workflows were not executed here.
 
 ## License
 

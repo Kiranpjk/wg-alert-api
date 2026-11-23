@@ -15,6 +15,7 @@ from sqlalchemy import (
     UniqueConstraint,
     create_engine,
 )
+from sqlalchemy.dialects import postgresql, sqlite
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -86,3 +87,18 @@ def make_engine(url: str | None = None):
 
 def make_sessionmaker(engine) -> sessionmaker:
     return sessionmaker(bind=engine, expire_on_commit=False)
+
+
+def insert_ignore(db, model, values: dict, keys: tuple[str, ...]) -> int | None:
+    """Insert one row; return its id, or None if the unique `keys` already exist.
+
+    One atomic statement, so two requests inserting the same row cannot crash each other.
+    """
+    dialect = postgresql if db.get_bind().dialect.name == "postgresql" else sqlite
+    stmt = (
+        dialect.insert(model)
+        .values(**values)
+        .on_conflict_do_nothing(index_elements=list(keys))
+        .returning(model.id)
+    )
+    return db.execute(stmt).scalar_one_or_none()

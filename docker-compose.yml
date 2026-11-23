@@ -2,10 +2,10 @@ services:
   api:
     build: .
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
       DATABASE_URL: postgresql+psycopg://wg:${POSTGRES_PASSWORD:-wg}@db:5432/wg_alert
-      INGEST_API_KEY: ${INGEST_API_KEY:-change-me}
+      INGEST_API_KEY: ${INGEST_API_KEY:?set INGEST_API_KEY in .env (openssl rand -hex 32)}
     depends_on:
       db:
         condition: service_healthy

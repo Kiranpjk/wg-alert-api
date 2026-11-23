@@ -18,6 +18,7 @@ SEARCH = {"label": "Jena under 400", "city": "Jena", "max_rent": 400, "min_size_
 @pytest.fixture
 def client(monkeypatch):
     monkeypatch.delenv("INGEST_API_KEY", raising=False)
+    monkeypatch.setenv("ALLOW_NO_API_KEY", "1")
     app = create_app(os.getenv("TEST_DATABASE_URL", "sqlite://"))
     with TestClient(app) as c:
         yield c
