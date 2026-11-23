@@ -25,6 +25,7 @@ export default function App({ client = api, demo = isDemo }: { client?: Api; dem
   const [data, setData] = useState(emptyDashboard)
   const [loading, setLoading] = useState(true)
   const [failed, setFailed] = useState(false)
+  const [needsKey, setNeedsKey] = useState(false)
   const [selected, setSelected] = useState<number | null>(null)
   const [panel, setPanel] = useState<Panel>(null)
   const [health, setHealth] = useState<boolean | null>(null)
@@ -59,11 +60,14 @@ export default function App({ client = api, demo = isDemo }: { client?: Api; dem
       const matches = Object.fromEntries(entries.filter((entry) => entry !== null))
       setData({ searches: searches.filter((search) => search.id in matches), matches })
       setFailed(false)
+      setNeedsKey(false)
       setNotice((previous) => previous?.retry === refresh ? null : previous)
     } catch (error) {
       if (requestId !== sequence.current) return
       setFailed(true)
-      if (report) setNotice({ message: errorMessage('Could not load searches and matches.', error), retry: refresh })
+      const unauthorized = typeof error === 'object' && error !== null && 'status' in error && error.status === 401
+      setNeedsKey(unauthorized)
+      if (report && !unauthorized) setNotice({ message: errorMessage('Could not load searches and matches.', error), retry: refresh })
     } finally {
       if (requestId === sequence.current) setLoading(false)
     }
@@ -304,9 +308,12 @@ export default function App({ client = api, demo = isDemo }: { client?: Api; dem
           </header>
           {loading ? <div className="match-grid skeleton-grid" role="status" aria-label="Loading searches"><div /><div /><div /></div>
             : <section className="empty">
-              <h2>{failed ? 'Searches are unavailable' : 'No searches yet'}</h2>
-              <p>{failed ? 'Check the connection and try loading your searches again.' : 'Save a search with your city and warm rent budget to start finding matches.'}</p>
-              {failed ? <button onClick={() => void refresh()}>Retry</button>
+              <h2>{needsKey ? 'API key needed' : failed ? 'Searches are unavailable' : 'No searches yet'}</h2>
+              <p>{needsKey ? 'This server asks for an API key. Open Settings and enter the INGEST_API_KEY from your .env file.'
+                : failed ? 'Check the connection and try loading your searches again.'
+                : 'Save a search with your city and warm rent budget to start finding matches.'}</p>
+              {needsKey ? <button className="primary" onClick={() => setPanel('settings')}>Open Settings</button>
+                : failed ? <button onClick={() => void refresh()}>Retry</button>
                 : <button className="primary" onClick={() => setPanel('new')}><Icon name="plus" /> New search</button>}
             </section>}
         </>}

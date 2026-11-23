@@ -64,3 +64,12 @@ it('requires delete confirmation and returns to the empty state', async () => {
   await screen.findByText('No searches yet')
   expect(await client.listSearches()).toEqual([])
 })
+
+it('asks for the API key when the server answers 401', async () => {
+  const client = createDemoApi({ seed: [] })
+  vi.spyOn(client, 'listSearches').mockRejectedValue(Object.assign(new Error('invalid or missing X-API-Key'), { status: 401 }))
+  render(<App client={client} demo={false} />)
+  await screen.findByText('API key needed')
+  fireEvent.click(screen.getByRole('button', { name: 'Open Settings' }))
+  expect(screen.getByRole('dialog', { name: 'Settings' })).toBeTruthy()
+})
